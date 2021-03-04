@@ -3,7 +3,7 @@
 //! Use it in actix-web middleware.
 //!
 //! # Example:
-//! ```
+//! ```ignore
 //! use std::{
 //!     cell::RefCell,
 //!     pin::Pin,
