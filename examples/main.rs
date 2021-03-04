@@ -1,11 +1,3 @@
-use std::{
-    cell::RefCell,
-    pin::Pin,
-    rc::Rc,
-    sync::Arc,
-    task::{Context, Poll},
-};
-
 use actix_service::Transform;
 use actix_web::{
     dev::{Body, Service, ServiceRequest, ServiceResponse},
@@ -20,6 +12,13 @@ use futures::{
     future::{ok, Ready},
     stream::StreamExt,
     Future, FutureExt,
+};
+use std::{
+    cell::RefCell,
+    pin::Pin,
+    rc::Rc,
+    sync::Arc,
+    task::{Context, Poll},
 };
 
 #[actix_web::main]
