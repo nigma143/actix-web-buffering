@@ -256,7 +256,7 @@ impl<S, E> FileBufferingStream<S>
 where
     S: Stream<Item = Result<Bytes, E>> + Unpin,
 {
-    fn poll_next<I>(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Result<Bytes, I>>>
+    fn generic_poll_next<I>(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Result<Bytes, I>>>
     where
         E: Into<I>,
         I: From<BufferingError>,
@@ -313,16 +313,19 @@ impl<S, E> MessageBody for FileBufferingStream<S>
 where
     S: Stream<Item = Result<Bytes, E>> + Unpin,
     E: Into<actix_web::Error>,
-{
+{    
     fn size(&self) -> BodySize {
-        BodySize::Stream
+        match self.inner_eof {
+            false => BodySize::Stream,
+            true =>  BodySize::Sized(self.buffer_size as u64)
+        }
     }
 
     fn poll_next(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
     ) -> Poll<Option<Result<Bytes, actix_web::Error>>> {
-        self.poll_next(cx)
+        self.generic_poll_next(cx)
     }
 }
 
@@ -333,7 +336,14 @@ where
     type Item = Result<Bytes, actix_web::error::PayloadError>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        self.poll_next(cx)
+        self.generic_poll_next(cx)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        match self.inner_eof {
+            false => self.inner.size_hint(),
+            true => (self.produce_index, Some(self.buffer_size))
+        }
     }
 }
 
