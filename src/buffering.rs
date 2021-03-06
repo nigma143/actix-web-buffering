@@ -17,6 +17,7 @@ use uuid::Uuid;
 struct RequestBufferedMark;
 struct ResponseBufferedMark;
 
+/// See crate example
 pub fn enable_request_buffering<T>(wrapper: T, req: &mut ServiceRequest)
 where
     T: AsRef<FileBufferingStreamWrapper>,
@@ -29,6 +30,7 @@ where
     }
 }
 
+/// See crate example
 pub fn enable_response_buffering<T>(
     wrapper: T,
     mut svc_res: ServiceResponse<Body>,
@@ -55,7 +57,7 @@ where
     }
 }
 
-// File buffering stream wrapper. After wrap stream can be read multiple times
+/// File buffering stream wrapper. After wrap stream can be read multiple times
 pub struct FileBufferingStreamWrapper {
     tmp_dir: PathBuf,
     threshold: usize,
@@ -73,25 +75,25 @@ impl FileBufferingStreamWrapper {
         }
     }
 
-    // The temporary dir for larger bodies
+    /// The temporary dir for larger bodies
     pub fn tmp_dir(mut self, v: impl AsRef<Path>) -> Self {
         self.tmp_dir = v.as_ref().to_path_buf();
         self
     }
 
-    // The maximum size in bytes of the in-memory used to buffer the stream. Larger bodies are written to disk
+    /// The maximum size in bytes of the in-memory used to buffer the stream. Larger bodies are written to disk
     pub fn threshold(mut self, v: usize) -> Self {
         self.threshold = v;
         self
     }
 
-    // The chunk size for read buffered bodies
+    /// The chunk size for read buffered bodies
     pub fn produce_chunk_size(mut self, v: usize) -> Self {
         self.produce_chunk_size = v;
         self
     }
 
-    // The maximum size in bytes of the body. An attempt to read beyond this limit will cause an error
+    /// The maximum size in bytes of the body. An attempt to read beyond this limit will cause an error
     pub fn buffer_limit(mut self, v: Option<usize>) -> Self {
         self.buffer_limit = v;
         self
@@ -169,6 +171,12 @@ impl<S> FileBufferingStream<S> {
     }
 
     fn write_to_buffer(&mut self, bytes: &Bytes) -> Result<(), BufferingError> {
+        if let Some(limit) = self.buffer_limit {
+            if self.buffer_size + bytes.len() > limit {
+                return Err(BufferingError::Overflow);
+            }
+        }
+
         match self.buffer {
             Buffer::Memory(ref mut memory) => {
                 if self.threshold < memory.len() + bytes.len() {
@@ -269,12 +277,6 @@ where
                 match op {
                     Some(ref r) => {
                         if let Ok(ref o) = r {
-                            if let Some(limit) = this.buffer_limit {
-                                if this.buffer_size + o.len() > limit {
-                                    return Poll::Ready(Some(Err(BufferingError::Overflow.into())));
-                                }
-                            }
-
                             this.write_to_buffer(o)?;
                         }
                     }

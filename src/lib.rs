@@ -1,6 +1,6 @@
 //! Request/Response body buffering with support spooled to a temp file on disk
 //!
-//! Use it in actix-web middleware.
+//! Use it in actix-web middleware. For example this is used at [actix-web-detached-jws-middleware](https://crates.io/crates/actix-web-detached-jws-middleware)
 //!
 //! # Example:
 //! ```ignore
